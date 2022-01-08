@@ -1,0 +1,14 @@
+#CC_Transactions
+CC_REF_NUM = 11
+CC_TYPE = 9
+CC_TRANS_DATE = 2
+CC_CATEGORY = 4
+CC_MERCHANT = 5
+CC_AMOUNT = 10
+
+#B_Transactions
+B_DEBIT = 2
+B_CREDIT = 3
+B_BALANCE = 4
+B_DATE = 5
+B_MERCHANT = 6
