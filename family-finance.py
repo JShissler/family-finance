@@ -1,267 +1,67 @@
 import pandas as pd
 import os
 from datetime import datetime
+from calendar import month_name
 from mapping import CC_REF_NUM, CC_TYPE, CC_TRANS_DATE, CC_CATEGORY, CC_MERCHANT, CC_AMOUNT, B_DEBIT, B_CREDIT, B_BALANCE, B_DATE, B_MERCHANT
 from pyautogui import typewrite
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Border, Side, Alignment
 
+# CATEGORIES LIST
+categories_exp = ['Books', 'Car Daily', 'Car Maint.', 'Clothing', 'Debt', 'Dining', 'Entertain.',
+            'Exercise', 'Gaming', 'Gifts', 'Groceries', 'Hobby', 'Home Decor', 'House Upk.',
+            'Insurance', 'Medical', 'Misc.', 'One Time', 'Rent/Mortgage', 'Self Care', 'Trips',
+            'Utilities', 'Test']
+
+categories_inc = ['Salary', 'Other Income']
+
+categories_exp = sorted(categories_exp, key=str.lower)
+categories_exp_length = len(categories_exp)
+categories_inc_length = len(categories_inc)
+
+categories_all = categories_exp + categories_inc
+categories_all_length = len(categories_all)
+
+categories_exp.append('Manual')
+
+i = 0
+categories_exp_printable = ''
+while i < categories_exp_length:
+    categories_exp_printable += f"{i+1}. {categories_exp[i]}\n"
+    i += 1
+
+i = 0
+categories_inc_printable = ''
+while i < categories_inc_length:
+    categories_inc_printable += f"{i+1}. {categories_inc[i]}\n"
+    i += 1
+
 # -- FUNCTIONS --
 def choose_new_category(current_expense):
-    choice = int(input("""1. Books
-2. Car Daily
-3. Car Maint.
-4. Clothing
-5. Debt
-6. Dining
-7. Entertain.
-8. Exercise
-9. Gaming
-10. Gifts
-11. Groceries
-12. Hobby
-13. Home Decor
-14. House Upk.
-15. Insurance
-16. Medical
-17. Misc.
-18. One Time
-19. Rent/Mortgage
-20. Self Care
-21. Trips
-22. Utilities
-23. Manual
-Enter # of desired category for new expense - {}: """.format(current_expense.upper())))
-    match choice:
-        case 1:
-            choice = 'Books'
-        case 2:
-            choice = 'Car Daily'
-        case 3:
-            choice = 'Car Maint.'
-        case 4:
-            choice = 'Clothing'
-        case 5:
-            choice = 'Debt'
-        case 6:
-            choice = 'Dining'
-        case 7:
-            choice = 'Entertain.'
-        case 8:
-            choice = 'Exercise'
-        case 9:
-            choice = 'Gaming'
-        case 10:
-            choice = 'Gifts'
-        case 11:
-            choice = 'Groceries'
-        case 12:
-            choice = 'Hobby'
-        case 13:
-            choice = 'Home Decor'
-        case 14:
-            choice = 'Home Upk.'
-        case 15:
-            choice = 'Insurance'
-        case 16:
-            choice = 'Medical'
-        case 17:
-            choice = 'Misc.'
-        case 18:
-            choice = 'One Time'
-        case 19:
-            choice = 'Rent/Mortgage'
-        case 20:
-            choice = 'Self Care'
-        case 21:
-            choice = 'Trips'
-        case 22:
-            choice = 'Utilities'
-        case 23:
-            choice = 'Manual'
+    choice = int(input(categories_exp_printable + f"{categories_exp_length+1}. Manual\nEnter # of desired category for new expense - {current_expense.upper()}: "))
+    choice = categories_exp[choice-1]
     return choice
 
 def choose_manual_category(current_expense, amount):
-    choice = int(input("""1. Books
-2. Car Daily
-3. Car Maint.
-4. Clothing
-5. Debt
-6. Dining
-7. Entertain.
-8. Exercise
-9. Gaming
-10. Gifts
-11. Groceries
-12. Hobby
-13. Home Decor
-14. House Upk.
-15. Insurance
-16. Medical
-17. Misc.
-18. One Time
-19. Rent/Mortgage
-20. Self Care
-21. Trips
-22. Utilities
-Enter # of desired category for manual expense - {} of {}: """.format(current_expense.upper(), amount)))
-    match choice:
-        case 1:
-            choice = 'Books'
-        case 2:
-            choice = 'Car Daily'
-        case 3:
-            choice = 'Car Maint.'
-        case 4:
-            choice = 'Clothing'
-        case 5:
-            choice = 'Debt'
-        case 6:
-            choice = 'Dining'
-        case 7:
-            choice = 'Entertain.'
-        case 8:
-            choice = 'Exercise'
-        case 9:
-            choice = 'Gaming'
-        case 10:
-            choice = 'Gifts'
-        case 11:
-            choice = 'Groceries'
-        case 12:
-            choice = 'Hobby'
-        case 13:
-            choice = 'Home Decor'
-        case 14:
-            choice = 'Home Upk.'
-        case 15:
-            choice = 'Insurance'
-        case 16:
-            choice = 'Medical'
-        case 17:
-            choice = 'Misc.'
-        case 18:
-            choice = 'One Time'
-        case 19:
-            choice = 'Rent/Mortgage'
-        case 20:
-            choice = 'Self Care'
-        case 21:
-            choice = 'Trips'
-        case 22:
-            choice = 'Utilities'
+    choice = int(input(categories_exp_printable + f"Enter # of desired category for manual expense - {current_expense.upper()} of {amount}: "))
+    choice = categories_exp[choice-1]
     return choice
 
 def choose_new_income_category(current_expense):
-    choice = int(input("""1. Salary
-2. Other Income
-Enter # of desired category for new income - {}: """.format(current_expense.upper())))
-    match choice:
-        case 1:
-            choice = 'Salary'
-        case 2:
-            choice = 'Other Income'
+    choice = int(input(categories_inc_printable + f"Enter # of desired category for new income - {current_expense.upper()}: "))
+    choice = categories_inc[choice-1]
     return choice
 
 def category_to_int(choice):
-    match choice:
-        case 'Books':
-            choice = 1
-        case 'Car Daily':
-            choice = 2
-        case 'Car Maint.':
-            choice = 3
-        case 'Clothing':
-            choice = 4
-        case 'Debt':
-            choice = 5
-        case 'Dining':
-            choice = 6
-        case 'Entertain.':
-            choice = 7
-        case 'Exercise':
-            choice = 8
-        case 'Gaming':
-            choice = 9
-        case 'Gifts':
-            choice = 10
-        case 'Groceries':
-            choice = 11
-        case 'Hobby':
-            choice = 12
-        case 'Home Decor':
-            choice = 13
-        case 'Home Upk.':
-            choice = 14
-        case 'Insurance':
-            choice = 15
-        case 'Medical':
-            choice = 16
-        case 'Misc.':
-            choice = 17
-        case 'One Time':
-            choice = 18
-        case 'Rent/Mortgage':
-            choice = 19
-        case 'Self Care':
-            choice = 20
-        case 'Trips':
-            choice = 21
-        case 'Utilities':
-            choice = 22
-        case 'Salary':
-            choice = 23
-        case 'Other Income':
-            choice = 24
-    return choice
-
-def int_month_to_long_str(month):
-    match month:
-        case 1:
-            month = 'January'
-        case 2:
-            month = 'February'
-        case 3:
-            month = 'March'
-        case 4:
-            month = 'April'
-        case 5:
-            month = 'May'
-        case 6:
-            month = 'June'
-        case 7:
-            month = 'July'
-        case 8:
-            month = 'August'
-        case 9:
-            month = 'September'
-        case 10:
-            month = 'October'
-        case 11:
-            month = 'November'
-        case 12:
-            month = 'December'
-    return month
-
-def populate_ec_se(current_expense, category, amount):
-    sf_sheet_ec.cell(column=1, row=j+2).value = current_expense
-    sf_sheet_ec.cell(column=2, row=j+2).value = category
-
-    if category == 'Salary' or category == 'Other Income':
-        sf_sheet_se.cell(column=5, row=i+2).value = current_expense
-        sf_sheet_se.cell(column=6, row=i+2).value = category
-        sf_sheet_se.cell(column=7, row=i+2).value = amount
-    else:
-        sf_sheet_se.cell(column=1, row=i+2).value = current_expense
-        sf_sheet_se.cell(column=2, row=i+2).value = category
-        sf_sheet_se.cell(column=3, row=i+2).value = amount
+    index = categories_all.index(choice)
+    return index + 1
 
 def populate_ec(current_expense, category):
     sf_sheet_ec.cell(column=1, row=j+2).value = current_expense
     sf_sheet_ec.cell(column=2, row=j+2).value = category
 
 def populate_se(current_expense, category, amount):
-    if category == 'Salary' or category == 'Other Income':
+    if category in categories_inc:
         sf_sheet_se.cell(column=5, row=i+2).value = current_expense
         sf_sheet_se.cell(column=6, row=i+2).value = category
         sf_sheet_se.cell(column=7, row=i+2).value = amount
@@ -269,6 +69,10 @@ def populate_se(current_expense, category, amount):
         sf_sheet_se.cell(column=1, row=i+2).value = current_expense
         sf_sheet_se.cell(column=2, row=i+2).value = category
         sf_sheet_se.cell(column=3, row=i+2).value = amount
+
+def populate_ec_se(current_expense, category, amount):
+    populate_ec(current_expense, category)
+    populate_se(current_expense, category, amount)
 
 def trim_merchant_name(current_expense):
     print("Would you like to adjust the merchant name?")
@@ -315,7 +119,7 @@ def format_ieal(sc, sr, worksheet):
     ws.merge_cells(start_column=sc+3, start_row=sr+3, end_column=sc+4, end_row=sr+3)
 
     # Populate text for Title, Income, Expense, Assets, Liabilities, Liquid Inv. Info, Actual, Actual
-    ws.cell(column=sc+1, row=sr+1).value = "{} {}".format(int_month_to_long_str(desired_month), desired_year)
+    ws.cell(column=sc+1, row=sr+1).value = f"{month_name[desired_month]} {desired_year}"
     ws.cell(column=sc+1, row=sr+2).value = "Income"
     ws.cell(column=sc+3, row=sr+2).value = "Expense"
     ws.cell(column=sc+7, row=sr+2).value = "Assets"
@@ -338,22 +142,22 @@ def format_ieal(sc, sr, worksheet):
 
     # Populate text and amounts for Income categories
     i = 0
-    while i < 2:
+    while i < categories_inc_length:
         ws.cell(column=sc+1, row=sr+4+i).value = income_list_sorted[i]['category']
         ws.cell(column=sc+2, row=sr+4+i).value = income_list_sorted[i]['amount']
         i += 1
 
-    ws.cell(column=sc+2, row=sr+26).value = income_total
+    ws.cell(column=sc+2, row=sr+categories_exp_length+4).value = income_total
 
     # Populate text and amounts for Expense categories
     i = 0
-    while i < 22:
+    while i < categories_exp_length:
         ws.cell(column=sc+3, row=sr+4+i).value = expense_list_sorted[i]['category']
         ws.cell(column=sc+4, row=sr+4+i).value = expense_list_sorted[i]['amount']
         i += 1
 
-    ws.cell(column=sc+4, row=sr+26).value = expense_total
-    ws.cell(column=sc+5, row=sr+26).value = income_total - expense_total
+    ws.cell(column=sc+4, row=sr+categories_exp_length+4).value = expense_total
+    ws.cell(column=sc+5, row=sr+categories_exp_length+4).value = income_total - expense_total
 
     # Populate amounts for Assets
     ws.cell(column=sc+8, row=sr+4).value = checking_bal
@@ -413,23 +217,23 @@ def format_ieal(sc, sr, worksheet):
     ws.cell(column=sc+2, row=sr+4).style = 'Currency'
 
     i = 0
-    while i < 21:
+    while i < categories_exp_length - 1:
         ws.cell(column=sc+2, row=sr+5+i).style = 'Comma'
         i += 1
 
-    ws.cell(column=sc+2, row=sr+26).style = 'Currency'
+    ws.cell(column=sc+2, row=sr+categories_exp_length+4).style = 'Currency'
 
     # Style number format for Expenses
     ws.cell(column=sc+4, row=sr+4).style = 'Currency'
 
     i = 0
-    while i < 21:
+    while i < categories_exp_length - 1:
         ws.cell(column=sc+4, row=sr+5+i).style = 'Comma'
         i += 1
 
-    ws.cell(column=sc+4, row=sr+26).style = 'Currency'
-    ws.cell(column=sc+5, row=sr+26).style = 'Currency'
-    ws.cell(column=sc+5, row=sr+26).font = Font(bold=True)
+    ws.cell(column=sc+4, row=sr+categories_exp_length+4).style = 'Currency'
+    ws.cell(column=sc+5, row=sr+categories_exp_length+4).style = 'Currency'
+    ws.cell(column=sc+5, row=sr+categories_exp_length+4).font = Font(bold=True)
 
     # Stlye number format for Assets and Liabilities
     i = 0
@@ -455,15 +259,14 @@ def format_ieal(sc, sr, worksheet):
     ws.cell(column=sc+13, row=sr+7).number_format = '0.00%'
 
     # Style border for Income, Expense, Assets, Liabilities, Liquid Inv.
-    ws.cell(column=sc+2, row=sr+26).border = Border(top=thin)
-    ws.cell(column=sc+4, row=sr+26).border = Border(top=thin)
+    ws.cell(column=sc+2, row=sr+categories_exp_length+4).border = Border(top=thin)
+    ws.cell(column=sc+4, row=sr+categories_exp_length+4).border = Border(top=thin)
     ws.cell(column=sc+8, row=sr+6).border = Border(top=thin)
     ws.cell(column=sc+8, row=sr+11).border = Border(top=thin)
     ws.cell(column=sc+10, row=sr+11).border = Border(top=thin)
     ws.cell(column=sc+13, row=sr+6).border = Border(top=thin)
 
 # -- END FUNCTIONS --
-
 convert_csv(r'ccd')
 convert_csv(r'bd')
 
@@ -483,10 +286,18 @@ sf_sheet_hd = sf_workbook["Historical Data"] # Historical Data
 sf_sheet_charts = sf_workbook["Charts"] # Charts
 
 
-# Clear prior data from RD, SE, CE
-sf_sheet_rd.delete_rows(idx=2, amount=200)
-sf_sheet_se.delete_rows(idx=2, amount=200)
-sf_sheet_ce.delete_rows(idx=3, amount=200)
+# Clear prior data from RD, SE, CE, Overview
+sf_sheet_rd.delete_rows(idx=2, amount=300)
+sf_sheet_se.delete_rows(idx=2, amount=300)
+sf_sheet_ce.delete_rows(idx=3, amount=300)
+sf_sheet_overview.delete_rows(idx=2, amount=300)
+
+# Populate categories for CE and CD
+i = 0
+while i < categories_all_length:
+    sf_sheet_ce.cell(column=((i+1)*2)-1, row=1).value = categories_all[i]
+    sf_sheet_cd.cell(column=15+i, row=1).value = categories_all[i]
+    i += 1
 
 # Declare lists
 transactions = []
@@ -670,7 +481,7 @@ while i < trans_length:
 
 i = 0
 column_expense_total = 0
-while i < 24:
+while i < len(categories_all):
     j = 0
     while j < trans_length:
         if sf_sheet_ce.cell(column=(i+1)*2, row=j+3).value != None:
@@ -707,12 +518,15 @@ if i == recorded_length:
 # Populate working_row with data
 i = 0
 expense_total = 0
+income_total = 0
 current_expense_value = 0
-while i < 24:
+while i < len(categories_all):
     current_expense_value = float(sf_sheet_ce.cell(column=(i+1)*2, row=2).value)
     sf_sheet_cd.cell(column=i+15, row=working_row).value = current_expense_value
-    if i < 22:
+    if i < categories_exp_length:
         expense_total += current_expense_value
+    else:
+        income_total += current_expense_value
     i += 1
 
 # Find most recent transaction and if it has an associated balance
@@ -720,7 +534,7 @@ i = 0
 most_recent_date = datetime(1, 1, 1)
 most_recent_date_row = 1
 while i < trans_length:
-    if sf_sheet_rd.cell(column=3, row=i+2).value > most_recent_date:
+    if sf_sheet_rd.cell(column=3, row=i+2).value > most_recent_date and sf_sheet_rd.cell(column=9, row=i+2).value != None:
         most_recent_date = sf_sheet_rd.cell(column=3, row=i+2).value
         most_recent_date_row = i+2
     i += 1
@@ -728,7 +542,7 @@ while i < trans_length:
 # Collect misc. information
 if sf_sheet_rd.cell(column=9, row=most_recent_date_row).value != None:
     checking_bal = float(sf_sheet_rd.cell(column=9, row=most_recent_date_row).value)
-    print("Checking Account balance automatically pulled as {}".format(checking_bal))
+    print(f"Checking Account balance automatically pulled as {checking_bal}")
 else:
     checking_bal = float(input("Please input end of month Checking Account balance: "))
 
@@ -748,7 +562,6 @@ sf_sheet_cd.cell(column=2, row=working_row).value = desired_year
 sf_sheet_cd.cell(column=3, row=working_row).value = f"=DATE(B{working_row},A{working_row},1)"
 sf_sheet_cd.cell(column=3, row=working_row).number_format = 'mmm-yy'
 
-income_total = (sf_sheet_ce.cell(column=46, row=2).value + sf_sheet_ce.cell(column=48, row=2).value)
 sf_sheet_cd.cell(column=4, row=working_row).value = income_total
 sf_sheet_cd.cell(column=5, row=working_row).value = expense_total
 sf_sheet_cd.cell(column=6, row=working_row).value = income_total - expense_total
@@ -777,14 +590,14 @@ while i < 3:
     i += 1
 
 i = 0
-while i < 24:
+while i < len(categories_all):
     sf_sheet_cd.cell(column=15+i, row=2).value = calculate_average_cd(15+i)
     i += 1
 
 # Create lists from CD info and create a separate sorted lists
 i = 0
 expense_list = []
-while i < 22:
+while i < categories_exp_length:
     expense_cat = sf_sheet_cd.cell(column=i+15, row=1).value
     expense_amount = sf_sheet_cd.cell(column=i+15, row=working_row).value
     expense = {
@@ -796,9 +609,9 @@ while i < 22:
 
 i = 0
 income_list = []
-while i < 2:
-    income_cat = sf_sheet_cd.cell(column=i+37, row=1).value
-    income_amount = sf_sheet_cd.cell(column=i+37, row=working_row).value
+while i < categories_inc_length:
+    income_cat = sf_sheet_cd.cell(column=i+15+categories_exp_length, row=1).value
+    income_amount = sf_sheet_cd.cell(column=i+15+categories_exp_length, row=working_row).value
     income = {
         "category": income_cat,
         "amount": income_amount
@@ -813,7 +626,7 @@ income_list_sorted = sorted(income_list, key = lambda i: i["amount"], reverse=Tr
 format_ieal(1, 1, "Overview")
 
 # Populate Historical Data info for active month
-hd_row = ((desired_year - 2021) * 312) + (desired_month * 26) + 1
+hd_row = ((desired_year - 2021) * (categories_exp_length+4) * 12) + (desired_month * (categories_exp_length+4)) + 1
 format_ieal(1, hd_row, "Historical Data")
 
 # Save FamilyFinance.xlsx with updated information
